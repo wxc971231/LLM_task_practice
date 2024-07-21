@@ -97,3 +97,20 @@ if __name__ == "__main__":
         logits = model(**inputs).logits
         pred = torch.argmax(logits, dim=-1)
         print(f"输入：{sen}\n模型预测结果:{id2_label.get(pred.item())}")
+
+'''
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at hfl/rbt3 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+ep: 0, global_step: 0, loss: 0.7857450842857361
+ep: 0, global_step: 100, loss: 0.2953903377056122
+ep: 0, global_step: 200, loss: 0.31177449226379395
+ep: 0, acc: 0.8880308866500854
+ep: 1, global_step: 300, loss: 0.25318512320518494
+ep: 1, global_step: 400, loss: 0.39238491654396057
+ep: 1, acc: 0.916344940662384
+ep: 2, global_step: 500, loss: 0.2876495122909546
+ep: 2, global_step: 600, loss: 0.09108485281467438
+ep: 2, acc: 0.9137709140777588
+输入：我觉得这家酒店不错，饭很好吃！
+模型预测结果:好评！
+'''
