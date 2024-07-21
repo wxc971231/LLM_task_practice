@@ -13,7 +13,7 @@ class MyDataset(Dataset):
     def __init__(self) -> None:
         super().__init__()
         self.data = pd.read_csv(f"{base_path}/ChnSentiCorp_htl_all.csv")    # 加载原始数据
-        self.data = self.data.dropna()                                      # 去掉 nan 值
+        self.data = self.data.dropna()      # 去掉脏数据                                  # 去掉 nan 值
 
     def __getitem__(self, index):
         text:str = self.data.iloc[index]["review"]
