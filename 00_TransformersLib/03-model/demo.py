@@ -1,6 +1,6 @@
 import os
 import sys
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+base_path = os.path.abspath(os.path.join(os.path.dirname('__file__')))
 sys.path.append(base_path)
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -12,7 +12,7 @@ from torch.optim import Adam
 class MyDataset(Dataset):
     def __init__(self) -> None:
         super().__init__()
-        self.data = pd.read_csv(f"{base_path}/ChnSentiCorp_htl_all.csv")    # 加载原始数据
+        self.data = pd.read_csv(f"{base_path}/datasets/ChnSentiCorp_htl_all.csv")    # 加载原始数据
         self.data = self.data.dropna()      # 去掉脏数据                                  # 去掉 nan 值
 
     def __getitem__(self, index):
