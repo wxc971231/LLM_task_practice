@@ -9,7 +9,8 @@ from transformers import TrainingArguments
 from typing import Dict, List
 from transformers import AutoConfig
 from transformers import AutoTokenizer, LlamaTokenizerFast
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
+import datasets 
 from transformers import DataCollatorForLanguageModeling
 
 def small_init_weights(model):
@@ -79,12 +80,22 @@ def inference(model: AutoModelForCausalLM, tokenizer: AutoTokenizer, input_text:
 
 if __name__ == "__main__":
     # ------------------------------------------------- 数据加载和预处理 -----------------------------------------------------
-    # 加载原始数据集
+    # 直接从 huggingface 官网下载
     train_dataset = load_dataset("noanabeshima/TinyStoriesV2", split='train[:10%]', cache_dir='E:\8. data\hugggingface')
     val_dataset = load_dataset("noanabeshima/TinyStoriesV2", split='validation', cache_dir='E:\8. data\hugggingface')
+    
+    # 使用国内镜像下载数据集
+    #os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+    #os.system('huggingface-cli download --repo-type dataset noanabeshima/TinyStoriesV2 --cache-dir ./test_llama/huggingface/dataset')
+    # 镜像下载后，从本地加载
+    #config = datasets.DownloadConfig(resume_download=True, max_retries=100) 
+    #dataset_path = f'{base_path}/test_llama/huggingface/dataset/datasets--noanabeshima--TinyStoriesV2/snapshots/50ffd6925642413b001a000bc30e1d90aed9f5da'
+    #train_dataset = load_dataset('json', data_files=f'{dataset_path}/TinyStoriesV2-GPT4-train.jsonl', split='train[:10%]')
+    #val_dataset = load_dataset('json', data_files=f'{dataset_path}/TinyStoriesV2-GPT4-valid.jsonl', split='train')
 
     # 使用 LLama2 的词表（32k）进行 tokenize，LLama3 的太大了（128k）
-    tokenizer = AutoTokenizer.from_pretrained('NousResearch/Llama-2-7b-hf')
+    tokenizer = AutoTokenizer.from_pretrained('NousResearch/Llama-2-7b-hf')                         # 直接从 huggingface 官网下载
+    #tokenizer = AutoTokenizer.from_pretrained(f'{base_path}/test_llama/huggingface/tokenizer')     # 本地加载
     train_dataset = train_dataset.shuffle()         # 训练集打乱一下
     tokenized_train_dataset = train_dataset.map(
         lambda example: sample_preprocess(example, tokenizer),
@@ -131,7 +142,7 @@ if __name__ == "__main__":
 
 
     # ----------------------------------------------- 创建Trainer并启动训练 ---------------------------------------------------
-    os.environ['WANDB_DISABLED'] = 'true'   # 关闭 wandb
+    os.environ['WANDB_DISABLED'] = 'true'                   # 关闭 wandb
 
     # 创建训练配置
     training_args = TrainingArguments(
@@ -139,8 +150,8 @@ if __name__ == "__main__":
         save_total_limit=2,                                 # output_dir 内留存的检查点最大数目
         overwrite_output_dir=True,                          # 是否覆写 output_dir
         num_train_epochs=2,                                 # 训练轮数，2 ~ 3 即可
-        per_device_train_batch_size=2,                      # 训练 batch_size（一个 epoch 存在 ceil(data_num/bsz) 个 batch）
-        per_device_eval_batch_size=5,                      # 验证 batch_size
+        per_device_train_batch_size=45,                     # 训练 batch_size（一个 epoch 存在 ceil(data_num/bsz) 个 batch）
+        per_device_eval_batch_size=50,                      # 验证 batch_size
         gradient_accumulation_steps=1,                      # 梯度累计步大小，显存不变时扩展等效 batch_size，小模型没必要。参考 https://blog.csdn.net/wxc971231/article/details/139177793
         do_train=True,                                      # 是否做训练
         do_eval=True,                                       # 是否做评估
@@ -159,11 +170,11 @@ if __name__ == "__main__":
 
     # 创建 Trainer
     trainer = Trainer(
-        model=model,                    # 模型实例
-        args=training_args,             # 训练参数
-        train_dataset=train_dataset,    # 训练集
-        eval_dataset=val_dataset,       # 验证集（评估集）
-        data_collator=data_collator,    # data collator
+        model=model,                            # 模型实例
+        args=training_args,                     # 训练参数
+        train_dataset=tokenized_train_dataset,  # 训练集
+        eval_dataset=tokenized_val_dataset,     # 验证集（评估集）
+        data_collator=data_collator,            # data collator
     )
 
     # 开始训练
